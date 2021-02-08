@@ -94,6 +94,7 @@ def same_precedence_opers(op):
     # List of operators with the same precedence
     list_op = [
         ['[]'],
+        ["@u"],
         ['**', '^'],
         ['+u', '-u', '~'],
         ['/'],
@@ -152,8 +153,8 @@ def higher_priority_oper(op):
     >>> higher_priority_oper('**')
     ['[]']
     """
-    opers = ['[]', '**', '^', '-u', '+u', '~', '/', '//', '*', '@', '%', '+',
-             '-',
+    opers = ['[]', '@u', '**', '^', '-u', '+u', '~', '/', '//', '*', '@', '%',
+             '+', '-',
              '<<', '>>', '&', '^', '|', '==', '!=', '>', '>=', '<',
              '<=', 'is', 'is not', 'in', 'not in', 'not', 'and']
 
@@ -188,7 +189,7 @@ def catch_operator(string, operator):
     Examples
     --------
 
-    >>> catch_operator("2+4*1-1", '+')
+    >>> catch_operator("2+4+5*1-1", '+')
     [[(0, 1), (2, 5)]]
 
     >>> catch_operator("2+4*1-5*8", '*')
@@ -230,7 +231,7 @@ def catch_operator(string, operator):
         
         """
         # '+' and '-' are the only unary / binary operators
-        if string_[index] in ['+', '-']:
+        if string_[index] in ['+', '-', '@']:
 
             # If  we  are  at  the  beginning  of the string, there is no left
             # operand, the operator is thus unary
@@ -573,8 +574,7 @@ def catch_operator(string, operator):
 
         # [left begin, left end, right begin, right end]
         if is_unary:
-            all_matches.append([[oper.span()[0], oper.span()[0]],
-                                [oper.span()[1], end_right_index]])
+            all_matches.append([[oper.span()[1], end_right_index]])
         else:
             all_matches.append([[beg_left_index, oper.span()[0]],
                                 [oper.span()[1], end_right_index]])
@@ -965,7 +965,7 @@ def find_everything(string):
 
     # Retrieving all operators ...............................................
 
-    for operator in ['+', '-', '*', '@', '/', '**', '-u', '+u', "^"]:
+    for operator in ['+', '-', '*', '@', '@u', '/', '**', '-u', '+u', "^"]:
 
         # Getting all operations with this operator
         all_op_calls = catch_operator(string, operator)
@@ -1174,11 +1174,16 @@ def render(operation_dict, parentheses=False):
         # Classic operator
         string = '(' if parentheses else ''
 
-        for i, operand in enumerate(operation_dict['operation']['str_val']):
-            string += operand
+        if len(operation_dict['operation']['str_val']) > 1:
+            for i, operand in enumerate(operation_dict['operation']
+                                        ['str_val']):
+                string += operand
 
-            if i != len(operation_dict['operation']['str_val']) - 1:
-                string += operation_dict['operator'].replace('u', '')
+                if i != len(operation_dict['operation']['str_val']) - 1:
+                    string += operation_dict['operator'].replace('u', '')
+        else:
+            string += operation_dict['operator'].replace('u', '') + \
+                      operation_dict['operation']['str_val'][0]
 
         string += ')' if parentheses else ''
 
@@ -1457,6 +1462,61 @@ def replace_var(string, var, new_var):
                 op['operation']['str_val'][i_a] = new_var
 
     return render_from_tree(tree, all_op)
+
+
+# Apply a function to all the nodes __________________________________________
+
+def apply_to_leaves(expr, func, stringify=False):
+    """
+    Apply a function or an operator to all the leaves of the operation tree.
+    Parameters
+    ----------
+    expr : str
+        Mathematical expression
+    func : list of 2 elements
+        func[0] : str
+            Function / operator name
+        func[1] : bool
+            Truf is it is a function, false if it is an operator
+
+    stringify : bool, optional
+        Set  to  True  if  you  want  to  convert  the leaves as strings before
+        applying the function.s
+
+        Default is False
+
+    Returns
+    -------
+    expr : str
+        New expression of the string
+    """
+    op_dict = {"operator": func[0],
+               "priority": func[0],
+               "operation": {"str_val": []},
+               "is_fct": func[1]}
+    all_op = find_everything(expr)
+
+    if not all_op:
+        if stringify:
+            expr = f"'{expr}'"
+        op_dict["operation"]['str_val'] = [expr]
+        return render(op_dict)
+
+    tree = get_tree(all_op)
+
+    for op in all_op:
+        for i_c, child in enumerate(op["operation"]["children"]):
+            if child is None:
+                str_val = op["operation"]["str_val"][i_c]
+                if stringify:
+                    str_val = f"'{str_val}'"
+                op_dict["operation"]['str_val'] = [str_val]
+                r = render(op_dict)
+                op["operation"]["str_val"][i_c] = r
+
+    return render_from_tree(tree, all_op)
+
+
 
 
 # Optimize a function ________________________________________________________
