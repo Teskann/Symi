@@ -15,10 +15,11 @@ features :
 ## Installation
 
 You need to [install Python](https://www.python.org/downloads/) to run Symi.
-Once it is done, install Sympy :
+Once it is done, install SymPy and AnyTree:
 
 ```bash
 pip install sympy
+pip install anytree
 ```
 
 You can now clone this repository :
