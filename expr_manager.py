@@ -558,7 +558,7 @@ def catch_operator(string, operator):
                 # Checking if the operator is the same as 'operator'
                 if operator == o and operator in commutative_op:
                     extra_operand_indices[num_oper].append(i)
-                elif operator == o and operator not in right_to_left_asso_op:
+                elif operator == o and operator not in right_to_left_asso_op and 'u' not in o:
                     end_right_index = i
                     break
 
@@ -1701,7 +1701,7 @@ def optimize(funcstr, incl_lists=False):
 
 if __name__ == '__main__':
 
-    find_everything("x+$x")
+    find_everything("$$x")
 
     # Testing with a function string _________________________________________
 

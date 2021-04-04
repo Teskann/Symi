@@ -3,6 +3,8 @@
 Symi is a command-line interface to make symbolic computation easily. It runs
 under Python and is based on Sympy.
 
+![Symi CLI](./CLI.jpg)
+
 ## Features
 
 Symi supports all the SymPy functions and syntaxes. Here are some of the main
@@ -254,7 +256,8 @@ Laplace variable:
       2
   ```
 
-This won't work with multivariable functions. Instead use `integrate` Sympy's function :
+This won't work with multivariable functions. Instead use `integrate()` Sympy's
+function (or `int()`) :
 ```bash
 symi> integrate(cos(tx), x)
 
@@ -263,6 +266,26 @@ symi> integrate(cos(tx), x)
 ⎨   t               
 ⎪                   
 ⎩   x      otherwise
+
+symi> int(1/2*gt^2, t)
+   3
+g⋅t 
+────
+ 6
+```
+
+### Limits
+
+Symi offers a syntax to compute limits:
+
+```bash
+symi> lim x->0 ? sin(x)/x
+
+1
+
+symi> lim 2xy+z -> ab- ? (z+2yx-ba)^-1
+
+-∞
 ```
 
 ### Change Options

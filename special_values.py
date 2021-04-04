@@ -27,6 +27,7 @@ def get_values():
             "arctan": "atan",
             "conj": "conjugate",
             "abs": "Abs",
+            "int": "integrate"
      }
 
     operators = {}

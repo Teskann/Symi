@@ -1,10 +1,12 @@
 """
 Command-line interface of Symi
 """
+from os.path import join, dirname, abspath
 
 from expr2sympy import expr2sympy, sub_num
 import libs
-from sympy import pprint, pprint_try_use_unicode, nsimplify, simplify, solve
+from sympy import pprint, pprint_try_use_unicode, nsimplify, simplify, solve, \
+    limit, Symbol
 import readline
 import traceback
 
@@ -82,6 +84,14 @@ def perr(string):
 
     print(f"{bcolors.FAIL}[ ERROR ] {string}{bcolors.ENDC}")
 
+def exit_symi():
+    print("Thanks for using Symi ! See you later !")
+    path = join(dirname(abspath(__file__)), ".symi_history")
+    with open(path, "w+") as f:
+        history = f.readlines()
+        for i in range(readline.get_current_history_length()):
+            history.append(readline.get_history_item(i + 1))
+        f.write('\n'.join(history[-1000:]))
 
 if __name__ == "__main__":
     uni = pprint_try_use_unicode()
@@ -101,6 +111,20 @@ if __name__ == "__main__":
          |___/    Sympy CLI
          """
     print(welcome_msg[1:-1])
+
+    # History .................................................................
+    path = join(dirname(abspath(__file__)), ".symi_history")
+    try:
+        with open(path, "r") as f:
+            readline.clear_history()
+            history = f.readlines()
+            for his in history:
+                his = his.strip()
+                if his == "":
+                    continue
+                readline.add_history(his)
+    except FileNotFoundError:
+        pass
 
     while 1:
         try:
@@ -174,7 +198,7 @@ if __name__ == "__main__":
             # Exit ............................................................
 
             if line.strip().lower() == "exit":
-                print("Thanks for using Symi ! See you later !")
+                exit_symi()
                 break
 
             # Substitution ....................................................
@@ -189,6 +213,31 @@ if __name__ == "__main__":
                 line = line[:-1]
             else:
                 sub = False
+
+            # Limit ...........................................................
+
+            if line[:3] == "lim" and "?" in line and "->" in line:
+                limvar = expr2sympy(line[3:].split("->")[0], options, variables)
+                limvalstr = line[3:].split("->")[1].split("?")[0].strip()
+                dir = '+'
+                if limvalstr.endswith('-'):
+                    dir = '-'
+                    limvalstr = limvalstr[:-1]
+                elif limvalstr.endswith('+'):
+                    limvalstr = limvalstr[:-1]
+                limvalue = expr2sympy(limvalstr, options, variables)
+
+                fct = expr2sympy(line.split("?")[1], options, variables)
+                oldlimvar = limvar
+                sub_sym = Symbol("__SUB__SYMBOL__LIMIT__")
+                if type(limvar) != type(sub_sym):
+                    fct = fct.subs(limvar, sub_sym)
+                    limvar = sub_sym
+
+                lim = simplify(limit(fct, limvar, limvalue, dir=dir).subs(sub_sym, oldlimvar))
+                pprint(lim)
+                variables["ans_"] = lim
+                continue
 
             # Solve Equation ..................................................
 
@@ -252,10 +301,11 @@ if __name__ == "__main__":
                 variables["ans_"] = sym
 
         except KeyboardInterrupt:
-            print("Thanks for using Symi ! See you later !")
+            exit_symi()
             break
 
         except Exception:
             print(bcolors.FAIL)
             traceback.print_exc()
             print(bcolors.ENDC)
+
