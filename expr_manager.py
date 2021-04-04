@@ -104,6 +104,7 @@ def same_precedence_opers(op):
         ['@'],
         ['-'],
         ['+'],
+        ['$u'],
         ['<<', '>>'],
         ['&'],
         ['|'],
@@ -154,7 +155,7 @@ def higher_priority_oper(op):
     ['[]']
     """
     opers = ['[]', '@u', '**', '^', '-u', '+u', '~', '/', '//', '*', '@', '%',
-             '+', '-',
+             '+', '-', '$u',
              '<<', '>>', '&', '^', '|', '==', '!=', '>', '>=', '<',
              '<=', 'is', 'is not', 'in', 'not in', 'not', 'and']
 
@@ -231,7 +232,7 @@ def catch_operator(string, operator):
         
         """
         # '+' and '-' are the only unary / binary operators
-        if string_[index] in ['+', '-', '@']:
+        if string_[index] in ['+', '-', '@', '$']:
 
             # If  we  are  at  the  beginning  of the string, there is no left
             # operand, the operator is thus unary
@@ -301,7 +302,7 @@ def catch_operator(string, operator):
         if forward:
 
             # 1 char operators
-            if s in '~%+-^|&@':
+            if s in '~%+-^|&@$':
                 return check_unary(string_, index)
 
             # 2 chars operators
@@ -340,7 +341,7 @@ def catch_operator(string, operator):
         else:
 
             # One char operators
-            if s in '~%+-^|&@':
+            if s in '~%+-^|&@$':
                 return check_unary(string_, index)
 
             # 2 chars operators
@@ -393,12 +394,17 @@ def catch_operator(string, operator):
 
     # Matches exactly the operator sequence if it's surrounded by a word char,
     # a spacing char or an opening / closing bracket
-    op = r"((?<=([\s\w\]\[\)\(,]))|(?<=^))"
+    op = r"((?<=([\s\w\]"
+    if is_unary:
+        op += "+*\^\-@$/%"
+    op += r"\[\)\(,!]))|(?<=^))"
     for char in operator.replace('u', ''):
         if char == "^":
             char = "\^"
+        if char == "$":
+            char = "\$"
         op += '[' + char + ']'
-    op += r"(?=([\s\w\]\[\)\(,]))"
+    op += r"(?=([\s\w\]\[\)\(,$@-]))"
     spec = re.compile(op)
 
     # Finding all the operators
@@ -558,7 +564,7 @@ def catch_operator(string, operator):
 
                 # Checking if the operator has a higher priority level
                 elif o in higher_priority_oper(operator) or o in \
-                        same_precedence_opers(operator):
+                        same_precedence_opers(operator) or 'u' in o:
 
                     # If so, we skip it and continue searching
                     i += len(o.replace('u', '')) - 1
@@ -965,7 +971,7 @@ def find_everything(string):
 
     # Retrieving all operators ...............................................
 
-    for operator in ['+', '-', '*', '@', '@u', '/', '**', '-u', '+u', "^"]:
+    for operator in ['+', '-', '*', '@', '@u', "$u", '/', '**', '-u', '+u', "^"]:
 
         # Getting all operations with this operator
         all_op_calls = catch_operator(string, operator)
@@ -1517,8 +1523,6 @@ def apply_to_leaves(expr, func, stringify=False):
     return render_from_tree(tree, all_op)
 
 
-
-
 # Optimize a function ________________________________________________________
 
 def optimize(funcstr, incl_lists=False):
@@ -1697,13 +1701,14 @@ def optimize(funcstr, incl_lists=False):
 
 if __name__ == '__main__':
 
+    find_everything("x+$x")
+
     # Testing with a function string _________________________________________
 
     func_str = '[abs(cos(a1**(3-6)**5, 5-4)*arccos(x**2+5+0.1))-8-5*t**s' + \
                '(k[0]/1)+a1**(3-6)**5*r*3+cos(x), -6*R**3+cos(x)]'
     oper = '-u'
     matches = catch_operator(func_str, oper)
-    print(func_str)
     for match in matches:
         print('\n' + oper + ' :\n')
         for operand in match:

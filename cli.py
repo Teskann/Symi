@@ -89,6 +89,19 @@ if __name__ == "__main__":
     options = {"implicit_multiplication": True,
                "num_tolerance": 1e-10}
     update_completer(options, variables)
+
+    welcome_msg = """
+   _____                 _ 
+  / ____|               (_)
+ | (___  _   _ _ __ ___  _ 
+  \___ \| | | | '_ ` _ \| |
+  ____) | |_| | | | | | | |
+ |_____/ \__, |_| |_| |_|_|
+          __/ |            
+         |___/    Sympy CLI
+         """
+    print(welcome_msg[1:-1])
+
     while 1:
         try:
             line = input("\nsymi> ").strip()
@@ -101,7 +114,8 @@ if __name__ == "__main__":
             # Show variables ..................................................
 
             if line == "vars":
-                print(variables)
+                for variable in variables:
+                    print(variable, "=", variables[variable])
                 continue
 
             # Show options ....................................................
@@ -181,8 +195,7 @@ if __name__ == "__main__":
             if '?' in line:
                 eqns_list, vars_list = line.split("?")
                 eqns = eqns_list.split(";")
-                vars_list = vars_list.replace(',', '').replace(';', '')
-                varss = vars_list.strip().split(' ')
+                varss = vars_list.strip().split(';')
                 tru_eqns = []
                 for eqn in eqns:
                     left, right = eqn.split("=")
@@ -204,6 +217,9 @@ if __name__ == "__main__":
                 tru_vars = [expr2sympy(x, options, variables) for x in varss
                             if x.strip() != '']
                 sol = solve(tru_eqns, tru_vars)
+                if isinstance(sol, dict):
+                    for s in sol:
+                        variables[str(s)] = sol[s]
                 pprint(sol)
                 continue
 
@@ -221,9 +237,13 @@ if __name__ == "__main__":
             # Show Result .....................................................
 
             else:
-                if line in variables:
-                    pprint(sub_num(variables[line], options, variables, sub,
-                                   num))
+                ctn = False
+                for var in variables:
+                    if simplify(expr2sympy(line, options, variables) - expr2sympy(var, options, variables)) == 0:
+                        pprint(sub_num(variables[var], options, variables, sub,
+                                       num))
+                        ctn = True
+                if ctn:
                     continue
                 sym = simplify(sub_num(expr2sympy(line, options, variables),
                                options, variables, sub, num))

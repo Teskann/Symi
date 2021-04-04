@@ -58,6 +58,8 @@ def expr2sympy(expr, options, variables):
 
     old_fct.append(["@u", False])
     new_fct.append(["__SUB__", True])
+    old_fct.append(["$u", False])
+    new_fct.append(["integrate", True])
     expr = replace_many(expr, old_fct, new_fct)
     expr = apply_to_leaves(expr, ["MySymbol", True], True)
     sym = parse_expr(expr, evaluate=True, transformations=trans_i,

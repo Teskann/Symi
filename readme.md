@@ -22,7 +22,7 @@ pip install sympy
 pip install anytree
 ```
 
-You can now clone this repository :
+You can now clone this repository anywhere you want to install Symi:
 ```bash
 git clone https://github.com/Teskann/Symi
 ```
@@ -31,6 +31,26 @@ Then, move to the folder and run the program:
 ```bash
 cd Symi
 python ./cli.py
+```
+
+### Install on Linux
+
+If you use a Linux-based OS, you can run the following command to install Symi
+(after having cloned the repository and installed the Python dependencies):
+
+```bash
+$ python Symi/install_linux.py
+```
+This creates a `symi` alias for the command `python <location>/cli.py` and adds
+it to your .bashrc. Then, source your bashrc:
+```bash
+$ source ~/.bashrc
+```
+
+You can now run Symi with
+
+```bash
+$ symi
 ```
 
 You are ready to go !
@@ -66,7 +86,8 @@ To display all saved variables, simply type :
 ```bash
 symi> vars
 
-{'x': a + cos(t), 'r + t': tan(alpha_0)}
+x = a + cos(t)
+r + t = tan(alpha_0)
 
 ```
 This will print all the saved expressions.
@@ -154,7 +175,7 @@ equations (using SymPy's `solve()` function)
 To do so, write the equation(s) on the left, add a question mark `?` and then
 write the unknowns.
 If you write many equations, split them by a semicolon `;`, and if you have
-many unknowns, split them with a space ` `. Here are some examples :
+many unknowns, split them with a semicolon too `;`. Here are some examples :
 
 ```bash
 symi> cos(x) = 0 ? x
@@ -163,7 +184,7 @@ symi> cos(x) = 0 ? x
 ⎢⎜─,⎟, ⎜───,⎟⎥
 ⎣⎝2 ⎠  ⎝ 2  ⎠⎦
 
-symi> xy^2+1 = u ; xy-u_0 = b ? x, y
+symi> xy^2+1 = u ; xy-u_0 = b ? x; y
 
 ⎡⎛        2        ⎞⎤
 ⎢⎜(b + u₀)   u - 1 ⎟⎥
@@ -203,6 +224,46 @@ Laplace variable:
    s  + 1
     
   ```
+
+### Integration
+
+ Use the `$` to integrate functions of one variable :
+
+  ```bash
+  symi> $x
+  
+   2
+  x 
+  ──
+  2
+  
+  symi> $arctan(x)
+
+                 ⎛ 2    ⎞
+              log⎝x  + 1⎠
+  x⋅atan(x) - ───────────
+                   2
+  ```
+  Note that the `$` operator has a lower priority than addition and subtraction:
+
+  ```bash
+  symi> $x + 1
+  
+  x⋅(x + 2)
+  ─────────
+      2
+  ```
+
+This won't work with multivariable functions. Instead use `integrate` Sympy's function :
+```bash
+symi> integrate(cos(tx), x)
+
+⎧sin(t⋅x)           
+⎪────────  for t ≠ 0
+⎨   t               
+⎪                   
+⎩   x      otherwise
+```
 
 ### Change Options
 
