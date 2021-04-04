@@ -1,7 +1,7 @@
 # Symi : Command-Line Interface for Symbolic Computation
 
 Symi is a command-line interface to make symbolic computation easily. It runs
-under Python and is based on Sympy.
+under Python and is based on [Sympy](https://www.sympy.org/en/index.html).
 
 ![Symi CLI](./CLI.jpg)
 
