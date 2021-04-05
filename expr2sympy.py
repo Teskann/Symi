@@ -1,16 +1,14 @@
-from expr_manager import find_everything, replace_many, apply_to_leaves
+from expr_manager import replace_many, apply_to_leaves
 from sympy.parsing.sympy_parser import parse_expr, standard_transformations, \
-    function_exponentiation, implicit_multiplication, \
+    function_exponentiation, \
     implicit_multiplication_application, split_symbols, implicit_application,\
     convert_xor
 from special_values import get_values
-from sympy import Wild, nsimplify, integrate
-from sympy import Symbol, Add, Mul, Pow, Function, Integer, Float, sin
-from itertools import permutations
-from sympy import default_sort_key, topological_sort
+from sympy import Wild, nsimplify, integrate, diff, gamma, factorial
+from sympy import Symbol, Add, Mul, Pow, Function, Integer, Float
 
 
-def expr2sympy(expr, options, variables):
+def expr2sympy(expr, options, variables, sub):
     """
     Converts a string expression to a Sympy expression.
 
@@ -31,11 +29,17 @@ def expr2sympy(expr, options, variables):
     variables: dict
         Symi variables
 
+    sub : bool
+        True if the substitution must be applied.
+
     Returns
     -------
     Sympy Expression
 
     """
+
+    if sub:
+        expr = apply_to_leaves(expr, ["@u", False])
 
     fcts, operators, constants, advanced = get_values()
 
@@ -59,9 +63,13 @@ def expr2sympy(expr, options, variables):
         new_fct.append([operators[op], False])
 
     old_fct.append(["@u", False])
-    new_fct.append(["__SUB__", True])
+    new_fct.append(["__SUB", True])
     old_fct.append(["$u", False])
-    new_fct.append(["__integrate__", True])
+    new_fct.append(["__integrate", True])
+    old_fct.append(["'s", False])
+    new_fct.append(["__diff", True])
+    old_fct.append(["!s", False])
+    new_fct.append(["factorial", True])
     expr = replace_many(expr, old_fct, new_fct)
     expr = apply_to_leaves(expr, ["MySymbol", True], True)
     sym = parse_expr(expr, evaluate=True, transformations=trans_i,
@@ -79,13 +87,16 @@ def expr2sympy(expr, options, variables):
         sym = sym.subs(parse_expr(const), parse_expr(constants[const]))
     if options["tau_kills_pi"]:
         sym = sym.subs(parse_expr("tau"), parse_expr("2*pi"))
+    advanced["__diff"] = (lambda __wild_sym__:
+                          diff(parse_expr(str(__wild_sym__), transformations=transformations), parse_expr(options["diff_variable"]))
+                          if options["diff_variable"] is not None
+                          else diff(parse_expr(str(__wild_sym__), transformations=transformations)))
+    advanced["__integrate"] = (lambda __wild_sym__:
+                               integrate(parse_expr(str(__wild_sym__), transformations=transformations), parse_expr(options["integration_variable"]))
+                               if options["integration_variable"] is not None
+                               else integrate(parse_expr(str(__wild_sym__), transformations=transformations)))
 
-    advanced["__SUB__"] = lambda __wild_sym__: subs(__wild_sym__, variables)
-
-    advanced["__integrate__"] = (lambda __wild_sym__:
-        integrate(parse_expr(str(__wild_sym__), transformations=transformations), parse_expr(options["integration_variable"]))
-        if options["integration_variable"] is not None
-        else integrate(parse_expr(str(__wild_sym__), transformations=transformations)))
+    advanced["__SUB"] = lambda __wild_sym__: subs(__wild_sym__, variables)
     wild_sym = Wild("__wild_sym__")
     for adv in list(advanced)[::-1]:
         f = parse_expr(adv + "(__tmp_sym__)")

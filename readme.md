@@ -140,8 +140,8 @@ To make the substitution using all the variables you declared, you can add a
 `!` at the end of the command:
 ```bash
 symi> x = 10
-symi> sin(x)!
 
+symi> sin(x)!
 sin(10)
 
 ```
@@ -149,25 +149,26 @@ sin(10)
 To make a numeric simplification, just add `!!` at the end of the command line:
 ```bash
 symi> x = 10
-symi> sin(x)!!
 
+symi> sin(x)!!
 -0.544021110890615
 
 ```
 
-Note : The `!` or `!!` for substitution will only work at the end, otherwise it
-will be interpreted as a factorial function.
+Note : The `!` or `!!` only work at the end of the command line.
 
 If you want to substitute your variable at a specific place in the expression,
 precede it by a `@`:
 
 ```bash
 symi> x = y+1
-symi> sin(@x) + x
 
+symi> sin(@x) + x
 x + sin(y + 1)
 
 ```
+
+To automatically apply substitution, see `always_sub` option below.
 
 ### Solve Equations
 
@@ -203,11 +204,9 @@ symi> import physics_constants
 
 
 symi> c
-
 299792458
 
 symi> k
-
 1.380649e-23
 
 ```
@@ -230,15 +229,33 @@ Laplace variable:
 the time variable:
   ```bash
   symi> Linv(s/(s^2+1))
-
   cos(t)⋅θ(t)
 
   symi> F = 1/s^2
 
   symi> Linv(@F)
-
   t⋅θ(t)
   ```
+
+### Differentiation
+
+Use the single quote `'` to differentiate a function.
+```bash
+symi> x^2'
+2⋅x
+
+symi> cos(x) + 2x'
+2 - sin(x)
+```
+
+For functions with more than one variable, you need to set `diff_variable` parameter:
+
+```bash
+symi> diff_variable t
+
+symi> cos(omega*t+phi)'
+-ω⋅sin(ω⋅t + φ)
+```
 
 ### Integration
 
@@ -291,9 +308,7 @@ This works for multiple integrals like:
 ```bash
 symi> integration_variable xy
 
-
 symi> $x+y
-
 x⋅y⋅(x + y)
 ```
 
@@ -321,16 +336,15 @@ Symi offers a syntax to compute limits:
 
 ```bash
 symi> lim x->0 ? sin(x)/x
-
 1
 
 symi> lim 2xy+z -> ab- ? (z+2yx-ba)^-1
-
 -∞
 ```
 
 ### Change Options
 
+#### Display Options
 To display the current status of the options, run:
 ```bash
 symi> options
@@ -340,16 +354,22 @@ num_tolerance : 1e-10
 tau_kills_pi : False
 ```
 
+#### Implicit Multiplication
+
 If you want to disable implicit multiplication, run
 ```bash
 symi> implicit_multiplication off
 ```
+
+#### Numeric Tolerance
 
 If you work with numeric approximations, you can change the tolerance level,
 which defaults to `1e-10`:
 ```bash
 symi> num_tolerance 1e-3
 ```
+
+#### Use τ instead of 2π !
 
 If you think mankind should use τ=2π as the circle constant, you can enable the
 option `tau_kills_pi`:
@@ -363,13 +383,88 @@ symi> pi
 2
 
 symi> cos(tau)
-
 1
 
 symi> tau_kills_pi off
 
-
 symi> pi
-
 π
+```
+
+#### Always Apply substitution
+
+If you are tired of using the `@` and `!` operators and you want
+to always apply variable substitutions, you can enable `always_sub`
+option.
+
+```bash
+symi> f=x^2 + 2x + 1
+
+symi> diff(f)
+1
+
+symi> always_sub
+
+symi> diff(f)
+2⋅x + 2
+```
+
+#### Always Apply Numerical Evaluation
+
+There is also an option to always apply numerical evaluation:
+
+```bash
+symi> cos(pi/4)
+
+√2
+──
+2
+
+symi> always_num
+
+symi> cos(pi/4)
+0.707106781186548
+```
+
+#### Differentiation Variable
+
+If you differentiate a function of one variable with `'`, the differentiation
+variable is detected automatically. However, on multivariable functions, you
+need to set the `diff_variable` option:
+
+```bash
+symi> diff_variable x
+
+symi> ax^2'
+2⋅a⋅x
+```
+
+#### Integration Variable
+
+If you integrate with `$` on a function of one variable, this variable is used
+as the integration variable. However if you integrate multivariable functions,
+you need to set `integration_variable` option:
+
+```bash
+symi> integration_variable x
+
+symi> $cos(ax)
+
+⎧sin(a⋅x)           
+⎪────────  for a ≠ 0
+⎨   a               
+⎪                   
+⎩   x      otherwise
+```
+
+This works also for multiple dimensions integration:
+
+```bash
+symi> integration_variable xy
+
+symi> $x^2-y
+
+   ⎛ 2    ⎞
+x⋅y⋅⎝x  - y⎠
+
 ```

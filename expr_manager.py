@@ -95,6 +95,7 @@ def same_precedence_opers(op):
     list_op = [
         ['[]'],
         ["@u"],
+        ["!s"],
         ['**', '^'],
         ['+u', '-u', '~'],
         ['/'],
@@ -105,6 +106,7 @@ def same_precedence_opers(op):
         ['-'],
         ['+'],
         ['$u'],
+        ["'s"],
         ['<<', '>>'],
         ['&'],
         ['|'],
@@ -154,8 +156,8 @@ def higher_priority_oper(op):
     >>> higher_priority_oper('**')
     ['[]']
     """
-    opers = ['[]', '@u', '**', '^', '-u', '+u', '~', '/', '//', '*', '@', '%',
-             '+', '-', '$u',
+    opers = ['[]', '@u', '!s', '**', '^', '-u', '+u', '~', '/', '//', '*', '@',
+             '%', '+', '-', '$u', "'s",
              '<<', '>>', '&', '^', '|', '==', '!=', '>', '>=', '<',
              '<=', 'is', 'is not', 'in', 'not in', 'not', 'and']
 
@@ -253,12 +255,15 @@ def catch_operator(string, operator):
                 return string_[index] + 'u'
 
             # If the char is an operand-like char => Binary
-            if last_nspace_char.isalnum() or last_nspace_char in ')}]_':
+            if last_nspace_char.isalnum() or last_nspace_char in '!\')}]_':
                 return string_[index]
 
             # If the char is an operator-like char => Unary
             else:
                 return string_[index] + 'u'
+
+        elif string_[index] in ["'", "!"]:
+            return string_[index] + 's'
 
         # If it's not a '+' or a '-', it's not ambiguous
         else:
@@ -302,7 +307,7 @@ def catch_operator(string, operator):
         if forward:
 
             # 1 char operators
-            if s in '~%+-^|&@$':
+            if s in '~%+-^|&@$!\'':
                 return check_unary(string_, index)
 
             # 2 chars operators
@@ -341,7 +346,7 @@ def catch_operator(string, operator):
         else:
 
             # One char operators
-            if s in '~%+-^|&@$':
+            if s in '~%+-^|&@$!\'':
                 return check_unary(string_, index)
 
             # 2 chars operators
@@ -382,6 +387,10 @@ def catch_operator(string, operator):
         is_unary = True
     else:
         is_unary = False
+    if 's' in operator:
+        is_right_unary = True
+    else:
+        is_right_unary = False
 
     # List of commutative operators
     commutative_op = ['+', '*']
@@ -397,14 +406,17 @@ def catch_operator(string, operator):
     op = r"((?<=([\s\w\]"
     if is_unary:
         op += "+*\^\-@$/%"
-    op += r"\[\)\(,!]))|(?<=^))"
-    for char in operator.replace('u', ''):
+    op += r"\[\)\(,!']))|(?<=^))"
+    for char in operator.replace('u', '').replace('s', ''):
         if char == "^":
             char = "\^"
         if char == "$":
             char = "\$"
         op += '[' + char + ']'
-    op += r"(?=([\s\w\]\[\)\(,$@-]))"
+    op += r"(?=([\s\w\]\[\)\(,$@"
+    if is_right_unary:
+        op += "+*\^\-@$/%!'"
+    op += r"-]))"
     spec = re.compile(op)
 
     # Finding all the operators
@@ -484,10 +496,10 @@ def catch_operator(string, operator):
 
                 # Checking if the operator has a higher priority level
                 elif o in higher_priority_oper(operator) or o in \
-                        same_precedence_opers(operator):
+                        same_precedence_opers(operator) or 's' in o and 's' in operator and i == oper.span()[0] - 1:
 
                     # If so, we skip it and continue searching
-                    i -= len(o.replace('u', '')) - 1
+                    i -= len(o.replace('u', '').replace("s", '')) - 1
 
                 else:
 
@@ -558,7 +570,7 @@ def catch_operator(string, operator):
                 # Checking if the operator is the same as 'operator'
                 if operator == o and operator in commutative_op:
                     extra_operand_indices[num_oper].append(i)
-                elif operator == o and operator not in right_to_left_asso_op and 'u' not in o:
+                elif operator == o and operator not in right_to_left_asso_op and 'u' not in o and 's' not in o:
                     end_right_index = i
                     break
 
@@ -567,7 +579,7 @@ def catch_operator(string, operator):
                         same_precedence_opers(operator) or 'u' in o:
 
                     # If so, we skip it and continue searching
-                    i += len(o.replace('u', '')) - 1
+                    i += len(o.replace('u', '').replace("s", '')) - 1
 
                 else:
 
@@ -581,6 +593,8 @@ def catch_operator(string, operator):
         # [left begin, left end, right begin, right end]
         if is_unary:
             all_matches.append([[oper.span()[1], end_right_index]])
+        elif is_right_unary:
+            all_matches.append([[beg_left_index, oper.span()[0]]])
         else:
             all_matches.append([[beg_left_index, oper.span()[0]],
                                 [oper.span()[1], end_right_index]])
@@ -971,7 +985,7 @@ def find_everything(string):
 
     # Retrieving all operators ...............................................
 
-    for operator in ['+', '-', '*', '@', '@u', "$u", '/', '**', '-u', '+u', "^"]:
+    for operator in ['+', '-', '*', '@', '@u', "$u", '/', '**', '-u', '+u', "^", '!s', "'s"]:
 
         # Getting all operations with this operator
         all_op_calls = catch_operator(string, operator)
@@ -1186,10 +1200,13 @@ def render(operation_dict, parentheses=False):
                 string += operand
 
                 if i != len(operation_dict['operation']['str_val']) - 1:
-                    string += operation_dict['operator'].replace('u', '')
-        else:
-            string += operation_dict['operator'].replace('u', '') + \
+                    string += operation_dict['operator'].replace('u', '').replace("s", '')
+        elif 's' not in operation_dict['operator']:
+            string += operation_dict['operator'].replace('u', '').replace("s", '') + \
                       operation_dict['operation']['str_val'][0]
+        else:
+            string += operation_dict['operation']['str_val'][0] + \
+                      operation_dict['operator'].replace('u', '').replace("s", '')
 
         string += ')' if parentheses else ''
 
@@ -1483,11 +1500,11 @@ def apply_to_leaves(expr, func, stringify=False):
         func[0] : str
             Function / operator name
         func[1] : bool
-            Truf is it is a function, false if it is an operator
+            True is it is a function, false if it is an operator
 
     stringify : bool, optional
         Set  to  True  if  you  want  to  convert  the leaves as strings before
-        applying the function.s
+        applying the function.
 
         Default is False
 
@@ -1701,7 +1718,7 @@ def optimize(funcstr, incl_lists=False):
 
 if __name__ == '__main__':
 
-    find_everything("$$x")
+    find_everything("x!")
 
     # Testing with a function string _________________________________________
 
