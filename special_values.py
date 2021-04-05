@@ -4,7 +4,8 @@ how they are converted to SymPy functions.
 """
 
 from sympy.parsing.sympy_parser import parse_expr
-from sympy import laplace_transform, Symbol, simplify, Heaviside, DiracDelta
+from sympy import laplace_transform, Symbol, simplify, Heaviside, DiracDelta, \
+    inverse_laplace_transform
 
 
 def get_values():
@@ -27,7 +28,8 @@ def get_values():
             "arctan": "atan",
             "conj": "conjugate",
             "abs": "Abs",
-            "int": "integrate"
+            "int": "integrate",
+            "des": "apart"
      }
 
     operators = {}
@@ -35,15 +37,19 @@ def get_values():
     constants = {"i": "I",
                  "j": "J",
                  "inf": "oo",
+                 "ipi": "I*pi",
                  "e": "E"}
 
     advanced = {"Laplace": lambda __wild_sym__:
                 laplace_transform(parse_expr(str(__wild_sym__)), parse_expr("t"),
                                   parse_expr("s"), noconds=True),
+                "Linv": lambda __wild_sym__:
+                inverse_laplace_transform(parse_expr(str(__wild_sym__)), parse_expr("s"),
+                                          parse_expr("t"), noconds=True),
                 "step": lambda __wild_sym__: Heaviside(__wild_sym__),
                 "dirac": lambda __wild_sym__: DiracDelta(__wild_sym__),
                 "sym": lambda __wild_sym__:
-                Symbol(str(__wild_sym__))
+                Symbol(str(__wild_sym__)),
                 }
     advanced["L"] = advanced["Laplace"]
 

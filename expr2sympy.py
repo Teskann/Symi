@@ -4,7 +4,7 @@ from sympy.parsing.sympy_parser import parse_expr, standard_transformations, \
     implicit_multiplication_application, split_symbols, implicit_application,\
     convert_xor
 from special_values import get_values
-from sympy import Wild, nsimplify
+from sympy import Wild, nsimplify, integrate
 from sympy import Symbol, Add, Mul, Pow, Function, Integer, Float, sin
 from itertools import permutations
 from sympy import default_sort_key, topological_sort
@@ -24,6 +24,8 @@ def expr2sympy(expr, options, variables):
         Might contain :
 
         {"implicit_multiplication" : ,
+         "num_tolerance": ,
+         "tau_kills_pi":
         }
 
     variables: dict
@@ -59,7 +61,7 @@ def expr2sympy(expr, options, variables):
     old_fct.append(["@u", False])
     new_fct.append(["__SUB__", True])
     old_fct.append(["$u", False])
-    new_fct.append(["integrate", True])
+    new_fct.append(["__integrate__", True])
     expr = replace_many(expr, old_fct, new_fct)
     expr = apply_to_leaves(expr, ["MySymbol", True], True)
     sym = parse_expr(expr, evaluate=True, transformations=trans_i,
@@ -71,10 +73,19 @@ def expr2sympy(expr, options, variables):
                                   "Integer": Integer,
                                   "Float": Float,
                                   "MySymbol": advanced["sym"]})
+    if options["tau_kills_pi"]:
+        constants["itau"] = "I*tau"
     for const in constants:
         sym = sym.subs(parse_expr(const), parse_expr(constants[const]))
+    if options["tau_kills_pi"]:
+        sym = sym.subs(parse_expr("tau"), parse_expr("2*pi"))
 
     advanced["__SUB__"] = lambda __wild_sym__: subs(__wild_sym__, variables)
+
+    advanced["__integrate__"] = (lambda __wild_sym__:
+        integrate(parse_expr(str(__wild_sym__), transformations=transformations), parse_expr(options["integration_variable"]))
+        if options["integration_variable"] is not None
+        else integrate(parse_expr(str(__wild_sym__), transformations=transformations)))
     wild_sym = Wild("__wild_sym__")
     for adv in list(advanced)[::-1]:
         f = parse_expr(adv + "(__tmp_sym__)")
@@ -148,6 +159,8 @@ def sub_num(exp, options, variables, sub, num):
     if sub:
         exp = subs(exp, variables)
     if num:
+        if options["tau_kills_pi"]:
+            exp = exp.subs(parse_expr("tau"), parse_expr("2*pi"))
         if options["num_tolerance"] is not None:
             exp = nsimplify(exp, tolerance=options["num_tolerance"]).evalf()
         else:

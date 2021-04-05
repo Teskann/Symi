@@ -7,8 +7,8 @@ under Python and is based on [Sympy](https://www.sympy.org/en/index.html).
 
 ## Features
 
-Symi supports all the SymPy functions and syntaxes. Here are some of the main
-features :
+Symi supports [all the SymPy functions and syntaxes](https://docs.sympy.org/latest/modules/index.html).
+Here are some of the main features :
 - Variables do not need to be declared to be used
 - Variable storing
 - Implicit multiplications (you can disable it)
@@ -226,6 +226,19 @@ Laplace variable:
    s  + 1
     
   ```
+- `Linv(f)`: Inverse Laplace transform of `f` with respect to `s` with `t` as
+the time variable:
+  ```bash
+  symi> Linv(s/(s^2+1))
+
+  cos(t)⋅θ(t)
+
+  symi> F = 1/s^2
+
+  symi> Linv(@F)
+
+  t⋅θ(t)
+  ```
 
 ### Integration
 
@@ -255,8 +268,36 @@ Laplace variable:
   ─────────
       2
   ```
+To make it work with multivariable functions, update the `integration_variable` option:
 
-This won't work with multivariable functions. Instead use `integrate()` Sympy's
+```bash
+symi> integration_variable t
+
+
+symi> $gt
+
+   2
+g⋅t 
+────
+ 2
+
+symi> $x^2
+
+   2
+t⋅x
+```
+
+This works for multiple integrals like:
+```bash
+symi> integration_variable xy
+
+
+symi> $x+y
+
+x⋅y⋅(x + y)
+```
+
+You can also use `integrate()` Sympy's
 function (or `int()`) :
 ```bash
 symi> integrate(cos(tx), x)
@@ -290,6 +331,15 @@ symi> lim 2xy+z -> ab- ? (z+2yx-ba)^-1
 
 ### Change Options
 
+To display the current status of the options, run:
+```bash
+symi> options
+
+implicit_multiplication : True
+num_tolerance : 1e-10
+tau_kills_pi : False
+```
+
 If you want to disable implicit multiplication, run
 ```bash
 symi> implicit_multiplication off
@@ -299,4 +349,27 @@ If you work with numeric approximations, you can change the tolerance level,
 which defaults to `1e-10`:
 ```bash
 symi> num_tolerance 1e-3
+```
+
+If you think mankind should use τ=2π as the circle constant, you can enable the
+option `tau_kills_pi`:
+```bash
+symi> tau_kills_pi
+
+symi> pi
+
+τ
+─
+2
+
+symi> cos(tau)
+
+1
+
+symi> tau_kills_pi off
+
+
+symi> pi
+
+π
 ```

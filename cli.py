@@ -6,7 +6,7 @@ from os.path import join, dirname, abspath
 from expr2sympy import expr2sympy, sub_num
 import libs
 from sympy import pprint, pprint_try_use_unicode, nsimplify, simplify, solve, \
-    limit, Symbol
+    limit, Symbol, parse_expr
 import readline
 import traceback
 
@@ -93,11 +93,19 @@ def exit_symi():
             history.append(readline.get_history_item(i + 1))
         f.write('\n'.join(history[-1000:]))
 
+def ppprint(expr, options):
+    if options["tau_kills_pi"]:
+        expr = simplify(expr.subs(parse_expr("tau"), parse_expr("2*pi")))
+        expr = expr.subs(parse_expr("pi"), parse_expr("tau/2"))
+    pprint(expr)
+
 if __name__ == "__main__":
     uni = pprint_try_use_unicode()
     variables = {}
     options = {"implicit_multiplication": True,
-               "num_tolerance": 1e-10}
+               "num_tolerance": 1e-10,
+               "integration_variable": None,
+               "tau_kills_pi": False}
     update_completer(options, variables)
 
     welcome_msg = """
@@ -145,7 +153,8 @@ if __name__ == "__main__":
             # Show options ....................................................
 
             if line == "options":
-                print(options)
+                for option in options:
+                    print(option, ":", options[option])
                 continue
 
             # Clear variables .................................................
@@ -170,6 +179,22 @@ if __name__ == "__main__":
                 elif line.split(" ")[0] in ["num_tolerance"]:
                     try:
                         val = eval(line.split(" ")[1])
+                        options[line.split(" ")[0]] = val
+                    except (IndexError, NameError):
+                        perr(f"Error updating option "
+                             f"{line.split(' ')[0]}. Please follow the syntax "
+                             f":\n"
+                             f"symi > {line.split(' ')[0]} value")
+                    continue
+                elif line.split(" ")[0] in ["tau_kills_pi"]:
+                    if len(line.split(" ")) > 1:
+                        options["tau_kills_pi"] = "off" != line.split(" ")[1]
+                    else:
+                        options["tau_kills_pi"] = True
+                    continue
+                else:
+                    try:
+                        val = line.split(" ")[1]
                         options[line.split(" ")[0]] = val
                     except (IndexError, NameError):
                         perr(f"Error updating option "
@@ -235,7 +260,7 @@ if __name__ == "__main__":
                     limvar = sub_sym
 
                 lim = simplify(limit(fct, limvar, limvalue, dir=dir).subs(sub_sym, oldlimvar))
-                pprint(lim)
+                ppprint(lim, options)
                 variables["ans_"] = lim
                 continue
 
@@ -269,7 +294,7 @@ if __name__ == "__main__":
                 if isinstance(sol, dict):
                     for s in sol:
                         variables[str(s)] = sol[s]
-                pprint(sol)
+                ppprint(sol, options)
                 continue
 
             # Affectation .....................................................
@@ -289,14 +314,14 @@ if __name__ == "__main__":
                 ctn = False
                 for var in variables:
                     if simplify(expr2sympy(line, options, variables) - expr2sympy(var, options, variables)) == 0:
-                        pprint(sub_num(variables[var], options, variables, sub,
-                                       num))
+                        ppprint(sub_num(variables[var], options, variables, sub,
+                                       num), options)
                         ctn = True
                 if ctn:
                     continue
                 sym = simplify(sub_num(expr2sympy(line, options, variables),
                                options, variables, sub, num))
-                pprint(sym)
+                ppprint(sym, options)
 
                 variables["ans_"] = sym
 
