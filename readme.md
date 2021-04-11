@@ -304,14 +304,6 @@ symi> $x^2
 t⋅x
 ```
 
-This works for multiple integrals like:
-```bash
-symi> integration_variable xy
-
-symi> $x+y
-x⋅y⋅(x + y)
-```
-
 You can also use `integrate()` Sympy's
 function (or `int()`) :
 ```bash

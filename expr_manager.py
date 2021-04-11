@@ -157,7 +157,7 @@ def higher_priority_oper(op):
     ['[]']
     """
     opers = ['[]', '@u', '!s', '**', '^', '-u', '+u', '~', '/', '//', '*', '@',
-             '%', '+', '-', '$u', "'s",
+             '%', '-', '+', '$u', "'s",
              '<<', '>>', '&', '^', '|', '==', '!=', '>', '>=', '<',
              '<=', 'is', 'is not', 'in', 'not in', 'not', 'and']
 
@@ -1273,6 +1273,8 @@ def render_from_tree(tree, all_op):
         if tree[index].is_leaf:
             if tree[index].parent is None:
                 par = False
+            elif not all_op[int(tree[index].name)]['is_fct'] and "u" in all_op[int(tree[index].name)]['operator']:
+                par = False
             elif all_op[int(tree[index].name)]['is_fct']:
                 par = False
             elif all_op[int(tree[index].parent.name)]['priority'] == '[]':
@@ -1303,6 +1305,9 @@ def render_from_tree(tree, all_op):
                 par = False
 
             elif all_op[int(tree[index].name)]['is_fct']:
+                par = False
+
+            elif not all_op[int(tree[index].name)]['is_fct'] and ("u" in all_op[int(tree[index].name)]['operator'] or "s" in all_op[int(tree[index].name)]['operator']):
                 par = False
 
             elif all_op[int(tree[index].parent.name)]['priority'] == '[]':
@@ -1382,6 +1387,27 @@ def replace(string, operator, new_operator):
             op['is_fct'] = new_operator[1]
 
     return render_from_tree(tree, all_op)
+
+
+# Render from expr ___________________________________________________________
+
+def is_supported(expr):
+    """
+    Returns True if the expression has a correct / supported syntax
+
+    Parameters
+    ----------
+    expr : str
+        Mathematical expression
+
+    Returns
+    -------
+
+    """
+
+    all_op = find_everything(expr)
+    tree = get_tree(all_op)
+    return all_op == [] or render_from_tree(tree, all_op) == expr.replace(" ", "")
 
 
 # Replace many objects _______________________________________________________
@@ -1540,176 +1566,34 @@ def apply_to_leaves(expr, func, stringify=False):
     return render_from_tree(tree, all_op)
 
 
-# Optimize a function ________________________________________________________
+# Get the root operation _____________________________________________________
 
-def optimize(funcstr, incl_lists=False):
+def get_root_operation(expr):
     """
-    Description
-    -----------
-    
-    Optimize a string function finding redundant operations.
-    Returns all intermediate variables and the simplified expression
-    
-    Function only supports operators :
-        - +
-        - -
-        - *
-        - /
-        - **
-    and every function call with eventually many parameters.
-    
+    Returns the root operation of a string expression
+
     Parameters
     ----------
-    
-    funcstr : str
-        String representing a mathematical expression
-    incl_lists : bool, optionnal
-        True if you also want to optimize list declarations
-        
-        False if you don't want. Defalut is False.
-        
+    expr : str
+        Mathematical expression
+
     Returns
     -------
-    
-    variables : list of dict of strings
-        List containing the definition of every variable
-        Every element of this list is a dict containing keys :
-            - 'name' (str) : variable name
-            - 'value' (str) : value of this variable
-            - 'type' (str) : 'double' or 'vect'
-    expression : str
-        New expression of the function string
-    
-    Examples
-    --------
-    
-    TODO
-    
+
+    operator : list of str
+        operator[0] : str
+            Operator or function
+        operator[1] : bool
+            True if the operation is a function and not an operator
     """
 
-    # Create a new variable name .............................................
+    all_op = find_everything(expr)
+    tree = get_tree(all_op)
 
-    def var_name(operator, var_list):
-        """
-        Description
-        -----------
-        
-        Creates a new variable name from an operator / function that is not in
-        the given variable list
-        
-        Parameters
-        ----------
-        
-        operator : str
-            Operator or function name
-        var_list : list of str
-            List containing all the variables already created
-        
-        Returns
-        -------
-        
-        str
-            Variable name
-        """
-
-        var = 'v_'
-
-        dic = {"+": "sum",
-               "-": "sub",
-               "-u": "negative",
-               "+u": "positive",
-               "*": "prod",
-               "**": "exp",
-               "@": "matmul",
-               "/": "div",
-               '[]': "vect"}
-
-        if operator in dic.keys():
-            var += dic[operator]
-        else:
-            var += operator.replace('[', '').replace(']', '')
-
-        if var in [x['name'] for x in var_list]:
-            i = 1
-            var += '_0'
-            while var in [x['name'] for x in var_list]:
-                var = "_".join(var.split('_')[:-1]) + '_' + str(i)
-                i += 1
-        return var
-
-    # Variable list
-    # Every element of this list is a dict :
-    #   {'name' : variable name
-    #    'value' : Value of this variable
-    #    'type' : Variable type ('double' or 'vect')}
-    var_list = []
-
-    # While redundancies are found ...........................................
-
-    for k in range(10):
-        funcstr = funcstr.replace(' ', '')
-        funcstr = ' ' + funcstr + ' '
-
-        var_nb = len(var_list)
-
-        # Retrieving every operation
-        all_operations = find_everything(funcstr)
-
-        # Getting the operation tree
-        tree = get_tree(all_operations)
-
-        # Finding all leaves
-        leaves = []  # List of all the indices of the leaves
-
-        i_o = 0
-        for node in tree:
-            if node.is_leaf:
-                leaves.append(i_o)
-            i_o += 1
-
-        # Finding redundancies . . . . . . . . . . . . . . . . . . . . . . . .
-
-        redundancies = []
-        k = 0
-        for i_l in leaves:
-            for i_l2 in leaves[k + 1:]:
-                rend = render(all_operations[i_l])
-                if rend == render(all_operations[i_l2]):
-                    if rend not in redundancies and \
-                            (all_operations[i_l]['operator'] != '[]' or \
-                             incl_lists):
-                        redundancies.append(rend)
-                        # Creating variable name
-                        var = {'name': var_name(all_operations[i_l]
-                                                ['operator'], var_list),
-                               'value': rend,
-                               'type': 'vect' if all_operations[i_l]
-                                                 [
-                                                     'operator'] == "[]" else 'double'}
-                        var_list.append(var)
-            k += 1
-
-        if redundancies == []:
-            break
-
-        # Replacing redundant operations by a variable . . . . . . . . . . . .
-
-        for node in tree:
-            i_l = int(node.name)
-            for i_v, val in enumerate(all_operations[i_l]['operation']
-                                      ['str_val']):
-                for i_r, red in enumerate(redundancies):
-                    if red == val.strip() or '(' + red + ')' == val.strip():
-                        all_operations[i_l]['operation']['str_val'][i_v] = \
-                            var_list[i_r + var_nb]['name']
-                        # Removing child
-                        all_operations[i_l]['operation']['children'][
-                            i_v] = None
-                        # l_ch = list(tree[i_l].children)
-                        # l_ch.pop(i_v)
-                        # # tree[i_l].children = tuple(l_ch)
-        funcstr = render_from_tree(tree, all_operations)
-    return var_list, funcstr.strip()
+    for node in tree:
+        if node.is_root:
+            return [all_op[int(node.name)]["operator"], all_op[int(node.name)]["is_fct"]]
+    return [[], []]
 
 
 # ----------------------------------------------------------------------------

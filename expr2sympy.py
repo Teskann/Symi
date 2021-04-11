@@ -1,10 +1,12 @@
-from expr_manager import replace_many, apply_to_leaves
+from colors import bcolors
+from expr_manager import replace_many, apply_to_leaves, get_root_operation, \
+    is_supported
 from sympy.parsing.sympy_parser import parse_expr, standard_transformations, \
     function_exponentiation, \
     implicit_multiplication_application, split_symbols, implicit_application,\
     convert_xor
 from special_values import get_values
-from sympy import Wild, nsimplify, integrate, diff, gamma, factorial
+from sympy import Wild, nsimplify, integrate, diff, gamma, factorial, simplify
 from sympy import Symbol, Add, Mul, Pow, Function, Integer, Float
 
 
@@ -37,6 +39,12 @@ def expr2sympy(expr, options, variables, sub):
     Sympy Expression
 
     """
+
+    if not is_supported(expr):
+        print(f"{bcolors.WARNING}WARNING : The result given by this expression might be incorrect.\n"
+              "Try to retype the expression without implicit multiplication.\n"
+              "This warning can happen if you wrote useless parentheses, in "
+              f"which case, the result should be correct.{bcolors.ENDC}")
 
     if sub:
         expr = apply_to_leaves(expr, ["@u", False])
@@ -105,8 +113,13 @@ def expr2sympy(expr, options, variables, sub):
 
     sym = parse_expr(str(sym), evaluate=True,
                      transformations=transformations)
+    for const in constants:
+        sym = sym.subs(parse_expr(const), parse_expr(constants[const]))
 
-    return sym
+    if is_simplified(expr):
+        return simplify(sym)
+    else:
+        return sym
 
 
 def subs(exp, variables):
@@ -138,7 +151,10 @@ def subs(exp, variables):
 
     res, _ = recursive_sub(exp, var_tuple)
 
-    return res
+    if is_simplified(str(exp)):
+        return simplify(res)
+    else:
+        return res
 
 
 def sub_num(exp, options, variables, sub, num):
@@ -177,3 +193,29 @@ def sub_num(exp, options, variables, sub, num):
         else:
             exp = nsimplify(exp).evalf()
     return exp
+
+
+def is_simplified(expr):
+    """
+    Returns true if the expression must be simplified before being printed.
+    It must not be simplified for rewrite-functions
+
+    Parameters
+    ----------
+    expr : str
+        Mathematical expression
+
+    Returns
+    -------
+
+    bool
+        True if it must be simplified, False otherwise
+    """
+
+    rewrite_fcts = ["expand", "factor", "cse", "collect", "cancel", "apart",
+                    "trigsimp", "expand_trig", "powsimp", "expand_power_exp",
+                    "expand_power_base", "powdenest", "expand_log", "logcombine",
+                    "rewrite", "expand_func", "hyperexpand", "combsimp", "gammasimp"]
+
+    root = get_root_operation(expr)
+    return not (root[1] and any([x == root[0] for x in rewrite_fcts]))

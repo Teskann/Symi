@@ -8,19 +8,8 @@ from sympy import simplify, parse_expr, pprint, pprint_try_use_unicode, Symbol, 
     limit, solve, pretty
 
 import libs
+from colors import bcolors
 from expr2sympy import expr2sympy, sub_num
-
-
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKCYAN = '\033[96m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
 
 
 # Auto Completer ______________________________________________________________
@@ -450,7 +439,7 @@ class SymiInstance:
         # Show Result . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
         else:
-            simplified = simplify(self.sub_num(self.expr2sympy(line)))
+            simplified = self.sub_num(self.expr2sympy(line))
             for var in self.variables:
                 if simplified - self.expr2sympy(var) == 0:
                     self.print(self.sub_num(self.variables[var]))
