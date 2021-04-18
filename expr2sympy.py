@@ -1,6 +1,6 @@
 from colors import bcolors
 from expr_manager import replace_many, apply_to_leaves, get_root_operation, \
-    is_supported
+    is_supported, pipe_to_func
 from sympy.parsing.sympy_parser import parse_expr, standard_transformations, \
     function_exponentiation, \
     implicit_multiplication_application, split_symbols, implicit_application,\
@@ -78,7 +78,9 @@ def expr2sympy(expr, options, variables, sub):
     new_fct.append(["__diff", True])
     old_fct.append(["!s", False])
     new_fct.append(["factorial", True])
+    expr = pipe_to_func(expr)
     expr = replace_many(expr, old_fct, new_fct)
+    is_smp = is_simplified(expr)
     expr = apply_to_leaves(expr, ["MySymbol", True], True)
     sym = parse_expr(expr, evaluate=True, transformations=trans_i,
                      global_dict={"Symbol": Symbol,
@@ -116,7 +118,7 @@ def expr2sympy(expr, options, variables, sub):
     for const in constants:
         sym = sym.subs(parse_expr(const), parse_expr(constants[const]))
 
-    if is_simplified(expr):
+    if is_smp:
         return simplify(sym)
     else:
         return sym

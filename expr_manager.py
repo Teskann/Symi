@@ -410,6 +410,8 @@ def catch_operator(string, operator):
     for char in operator.replace('u', '').replace('s', ''):
         if char == "^":
             char = "\^"
+        if char == "|":
+            char = "\|"
         if char == "$":
             char = "\$"
         op += '[' + char + ']'
@@ -985,7 +987,7 @@ def find_everything(string):
 
     # Retrieving all operators ...............................................
 
-    for operator in ['+', '-', '*', '@', '@u', "$u", '/', '**', '-u', '+u', "^", '!s', "'s"]:
+    for operator in ['+', '-', '*', '@', '@u', "$u", '/', '**', '-u', '+u', "^", '!s', "'s", '|']:
 
         # Getting all operations with this operator
         all_op_calls = catch_operator(string, operator)
@@ -1386,7 +1388,7 @@ def replace(string, operator, new_operator):
             op['operator'] = new_operator[0]
             op['is_fct'] = new_operator[1]
 
-    return render_from_tree(tree, all_op)
+    return render_from_tree(tree, all_op) if tree else string
 
 
 # Render from expr ___________________________________________________________
@@ -1469,7 +1471,7 @@ def replace_many(string, operators, new_operators):
                 op['operator'] = new_operators[i][0]
                 op['is_fct'] = new_operators[i][1]
 
-    return render_from_tree(tree, all_op)
+    return render_from_tree(tree, all_op) if tree else string
 
 
 # Replace a variable _________________________________________________________
@@ -1510,7 +1512,7 @@ def replace_var(string, var, new_var):
             if arg == var:
                 op['operation']['str_val'][i_a] = new_var
 
-    return render_from_tree(tree, all_op)
+    return render_from_tree(tree, all_op) if tree else string
 
 
 # Apply a function to all the nodes __________________________________________
@@ -1563,7 +1565,7 @@ def apply_to_leaves(expr, func, stringify=False):
                 r = render(op_dict)
                 op["operation"]["str_val"][i_c] = r
 
-    return render_from_tree(tree, all_op)
+    return render_from_tree(tree, all_op) if tree else expr
 
 
 # Get the root operation _____________________________________________________
@@ -1595,6 +1597,41 @@ def get_root_operation(expr):
             return [all_op[int(node.name)]["operator"], all_op[int(node.name)]["is_fct"]]
     return [[], []]
 
+
+# Pipe to function ____________________________________________________________
+
+def pipe_to_func(expr):
+    """
+    Converts  the  pipe notations to the function. For example, "3 + 5*6 | cos"
+    becomes "cos(3+5*6)".
+
+    The  right  operand  is  then  considered as a function, called on the left
+    operand.
+
+    Parameters
+    ----------
+    expr : str
+        String of the mathematical expression
+
+    Returns
+    -------
+
+    updated : str
+        Expression without pipe notation
+    """
+
+    all_op = find_everything(expr)
+    tree = get_tree(all_op)
+
+    for op in all_op:
+        if op["operator"] == "|":
+            op["operator"] = op["operation"]["str_val"][1]
+            del op["operation"]["indices"][1]
+            del op["operation"]["str_val"][1]
+            del op["operation"]["children"][1]
+            op["is_fct"] = True
+
+    return render_from_tree(tree, all_op) if tree else expr
 
 # ----------------------------------------------------------------------------
 # | MAIN - RUNNING TESTS                                                     |
@@ -1644,5 +1681,4 @@ if __name__ == '__main__':
     func_str = "sin(cos(x)+[a[0],1])+sin(cos(x)+[a[0],1])+cos(x)+1"
     func_str = "test[3] + 4 * test(0)"
     print(find_everything(func_str))
-    print(optimize(func_str, True))
     # print(test)

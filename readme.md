@@ -13,6 +13,7 @@ Here are some of the main features :
 - Variable storing
 - Implicit multiplications (you can disable it)
 - Equation solver
+- Unix pipeline syntax supported
 
 ## Installation
 
@@ -170,10 +171,54 @@ x + sin(y + 1)
 
 To automatically apply substitution, see `always_sub` option below.
 
+### Rewrite an expression
+
+By default, all the results displayed in Symi are simplified with [Sympy's simplify function](https://docs.sympy.org/latest/tutorial/simplification.html#simplify).
+However, in some cases you might want to display your expression another way
+(partial fraction decomposition, expanded expression, ...).
+To rewrite an expression, you can use all the [Sympy functions for simplification](https://docs.sympy.org/latest/tutorial/simplification.html).
+Symi comes with a support of Unix pipelines syntaxes to make this easier.
+
+For example, to expand an expression, you can run
+
+```bash
+symi> (a+b)^2 | expand
+
+ 2            2
+a  + 2⋅a⋅b + b
+```
+This is equivalent to :
+```bash
+symi> expand((a+b)^2)
+
+ 2            2
+a  + 2⋅a⋅b + b
+```
+
+Another example, for factorization:
+```bash
+symi> a^3+3a^2b+3ab^2+b^3 | factor
+
+       3
+(a + b)
+```
+
+Partial fraction decomposition :
+```bash
+symi> 1/((x+3)*(x+1)) | apart
+
+      1           1    
+- ───────── + ─────────
+  2⋅(x + 3)   2⋅(x + 1)
+```
+
+*Note : Instead of using `apart`, you can use `des` which is an equivalent that
+stands for "**D**écomposition en **É**léments **S**imples" ("partial fraction decomposition" in French)*.
+
 ### Solve Equations
 
 Symi comes with a straight forward equation solver, that works for non-linear
-equations (using SymPy's `solve()` function)
+equations (using SymPy's `solve()` function).
 
 To do so, write the equation(s) on the left, add a question mark `?` and then
 write the unknowns.
