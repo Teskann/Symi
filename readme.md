@@ -40,11 +40,11 @@ under Python and is based on [Sympy](https://www.sympy.org/en/index.html).
 
 Symi supports [all the SymPy functions and syntaxes](https://docs.sympy.org/latest/modules/index.html).
 Here are some of the main features :
-- :heavy_checkmark: Variables do not need to be declared to be used
-- :heavy_checkmark: Variable storing
-- :heavy_checkmark: Implicit multiplications (you can disable it)
-- :heavy_checkmark: Equation solver
-- :heavy_checkmark: Unix pipeline syntax supported
+- :heavy_check_mark: Variables do not need to be declared to be used
+- :heavy_check_mark: Variable storing
+- :heavy_check_mark: Implicit multiplications (you can disable it)
+- :heavy_check_mark: Equation solver
+- :heavy_check_mark: Unix pipeline syntax supported
 
 > :warning: *This project does not contain automated tests yet. It may happen
 > that some computations return a wrong result.*
