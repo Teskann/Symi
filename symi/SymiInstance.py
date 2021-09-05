@@ -4,7 +4,7 @@ from os.path import join, dirname, abspath
 
 
 # Color the output ____________________________________________________________
-from sympy import simplify, parse_expr, pprint, pprint_try_use_unicode, Symbol, \
+from sympy import simplify, parse_expr, pprint_try_use_unicode, Symbol, \
     limit, solve, pretty
 
 import libs

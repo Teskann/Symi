@@ -1,3 +1,8 @@
-.symi_history
+symi/.symi_history
 /__pycache__/
+symi/__pycache__/
 .idea
+*.egg-info
+.eggs
+build
+dist

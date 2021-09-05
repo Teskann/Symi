@@ -9,7 +9,6 @@ import re
 from anytree import Node
 
 
-
 # Get rid of scientific notations ____________________________________________
 
 def scistrtodblstr(scistr, double=True):

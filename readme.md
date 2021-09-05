@@ -3,60 +3,76 @@
 Symi is a command-line interface to make symbolic computation easily. It runs
 under Python and is based on [Sympy](https://www.sympy.org/en/index.html).
 
-![Symi CLI](./CLI.jpg)
+![Symi CLI](img/CLI.jpg)
+
+[](mdtoc)
+## Table of Contents
+
+* [Features](#features)
+* [Get Started](#get-started)
+	* [Prerequisites](#prerequisites)
+	* [Installation](#installation)
+	* [Run it](#run-it)
+* [Documentation](#documentation)
+	* [Save an expression](#save-an-expression)
+	* [Display Saved variables](#display-saved-variables)
+	* [Clear all variables](#clear-all-variables)
+	* [Evaluate an expression](#evaluate-an-expression)
+	* [Rewrite an expression](#rewrite-an-expression)
+	* [Solve Equations](#solve-equations)
+	* [Work with Physics constants](#work-with-physics-constants)
+	* [Special functions](#special-functions)
+	* [Differentiation](#differentiation)
+	* [Integration](#integration)
+	* [Limits](#limits)
+	* [Change Options](#change-options)
+		* [Display Options](#display-options)
+		* [Implicit Multiplication](#implicit-multiplication)
+		* [Numeric Tolerance](#numeric-tolerance)
+		* [Use τ instead of 2π !](#use--instead-of-2-)
+		* [Always Apply substitution](#always-apply-substitution)
+		* [Always Apply Numerical Evaluation](#always-apply-numerical-evaluation)
+		* [Differentiation Variable](#differentiation-variable)
+		* [Integration Variable](#integration-variable)
+[](/mdtoc)
 
 ## Features
 
 Symi supports [all the SymPy functions and syntaxes](https://docs.sympy.org/latest/modules/index.html).
 Here are some of the main features :
-- Variables do not need to be declared to be used
-- Variable storing
-- Implicit multiplications (you can disable it)
-- Equation solver
-- Unix pipeline syntax supported
+- :heavy_checkmark: Variables do not need to be declared to be used
+- :heavy_checkmark: Variable storing
+- :heavy_checkmark: Implicit multiplications (you can disable it)
+- :heavy_checkmark: Equation solver
+- :heavy_checkmark: Unix pipeline syntax supported
 
-## Installation
+> :warning: *This project does not contain automated tests yet. It may happen
+> that some computations return a wrong result.*
 
-You need to [install Python](https://www.python.org/downloads/) to run Symi.
-Once it is done, install SymPy and AnyTree:
+## Get Started
 
-```bash
-pip install sympy
-pip install anytree
+### Prerequisites
+
+- You need to [install Python 3.8+](https://www.python.org/downloads/) to run Symi.
+:snake:
+- If you are under Windows, you also need to [download make](https://stackoverflow.com/questions/32127524/how-to-install-and-use-make-in-windows).
+:hammer:
+
+### Installation
+
+Run in a shell:
+
+```shell
+git clone https://github.com/Teskann/Symi && cd Symi && make
 ```
 
-You can now clone this repository anywhere you want to install Symi:
-```bash
-git clone https://github.com/Teskann/Symi
+### Run it
+
+```commandline
+symi
 ```
 
-Then, move to the folder and run the program:
-```bash
-cd Symi
-python ./cli.py
-```
-
-### Install on Linux
-
-If you use a Linux-based OS, you can run the following command to install Symi
-(after having cloned the repository and installed the Python dependencies):
-
-```bash
-$ python Symi/install_linux.py
-```
-This creates a `symi` alias for the command `python <location>/cli.py` and adds
-it to your .bashrc. Then, source your bashrc:
-```bash
-$ source ~/.bashrc
-```
-
-You can now run Symi with
-
-```bash
-$ symi
-```
-
-You are ready to go !
+You're done ! :tada:
 
 ## Documentation
 

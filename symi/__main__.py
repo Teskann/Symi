@@ -5,7 +5,10 @@ from SymiInstance import SymiInstance, bcolors
 import traceback
 
 
-if __name__ == "__main__":
+def main():
+    """
+    Symi main function
+    """
     symi = SymiInstance()
     while 1:
         try:
@@ -19,3 +22,7 @@ if __name__ == "__main__":
             print(bcolors.FAIL)
             traceback.print_exc()
             print(bcolors.ENDC)
+
+
+if __name__ == "__main__":
+    main()
